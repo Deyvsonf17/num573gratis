@@ -3204,8 +3204,13 @@ async def main():
         return
 
     try:
-        # Criar aplicação
-        application = Application.builder().token(BOT_TOKEN).build()
+        # Criar aplicação com configurações específicas
+        application = (
+            Application.builder()
+            .token(BOT_TOKEN)
+            .concurrent_updates(True)
+            .build()
+        )
 
         # Adicionar handlers
         application.add_handler(CommandHandler("start", start))
@@ -3221,10 +3226,6 @@ async def main():
         # Adicionar handler de erros
         application.add_error_handler(error_handler)
 
-        # Iniciar aplicação
-        await application.initialize()
-        await application.start()
-
         # Iniciar servidor web em paralelo
         web_runner = await start_web_server()
 
@@ -3235,21 +3236,24 @@ async def main():
         if CRYPTOPAY_API_TOKEN:
             await configurar_webhook_cryptopay()
 
-        # Usar polling diretamente na aplicação
-        await application.updater.start_polling(
-            allowed_updates=["message", "callback_query"],
-            drop_pending_updates=True
-        )
-
-        # Manter ambos serviços rodando
-        try:
-            while True:
-                await asyncio.sleep(1)
-        except KeyboardInterrupt:
-            logger.info("🛑 Parando serviços...")
-            await application.updater.stop()
-            await application.stop()
-            await web_runner.cleanup()
+        # Iniciar o bot com polling
+        async with application:
+            await application.start()
+            await application.updater.start_polling(
+                allowed_updates=["message", "callback_query"],
+                drop_pending_updates=True
+            )
+            
+            logger.info("✅ Bot iniciado com polling ativo!")
+            
+            # Manter ambos serviços rodando
+            try:
+                await application.updater.idle()
+            except KeyboardInterrupt:
+                logger.info("🛑 Parando serviços...")
+            finally:
+                await application.updater.stop()
+                await web_runner.cleanup()
 
     except Exception as e:
         logger.error(f"Erro crítico ao iniciar bot: {e}")
