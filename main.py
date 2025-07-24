@@ -1534,7 +1534,7 @@ async def menu_recarga(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if valor >= 50:
             keyboard.append([
                 InlineKeyboardButton(
-                    f"🔥 R$ {valor} + R$ {bonus} BÔNUS e {numeros_gratis} NÚMEROS GRÁTIS - POPULAR!",
+                    f"🔥 R$ {valor} + R$ {bonus} BÔNUS e {numeros_gratis} NÚMEROS GRÁTIS",
                     callback_data=f"recarga_{valor}"
                 )
             ])
