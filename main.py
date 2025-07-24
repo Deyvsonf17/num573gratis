@@ -12,7 +12,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes, Updater
 from collections import defaultdict
 from functools import wraps
 
@@ -1519,7 +1519,7 @@ async def menu_recarga(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for valor in VALORES_RECARGA:
         # Calcular bônus usando função centralizada
         bonus = calcular_bonus(valor)
-        
+
         # Calcular números grátis
         if valor >= 200:
             numeros_gratis = 20
@@ -3221,8 +3221,9 @@ async def main():
         if CRYPTOPAY_API_TOKEN:
             await configurar_webhook_cryptopay()
 
-        # Usar polling para o bot
-        await application.updater.start_polling(
+        # Criar e configurar updater manualmente para evitar conflitos
+        updater = Updater(application=application)
+        await updater.start_polling(
             allowed_updates=["message", "callback_query"],
             drop_pending_updates=True
         )
@@ -3233,6 +3234,7 @@ async def main():
                 await asyncio.sleep(1)
         except KeyboardInterrupt:
             logger.info("🛑 Parando serviços...")
+            await updater.stop()
             await application.stop()
             await web_runner.cleanup()
 
