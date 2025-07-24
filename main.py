@@ -1517,19 +1517,24 @@ async def menu_recarga(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     keyboard = []
     for valor in VALORES_RECARGA:
-        # Calcular bônus fixo
         # Calcular bônus usando função centralizada
         bonus = calcular_bonus(valor)
-        if bonus > 0:
-            valor_total = valor + bonus
-            bonus_text = f" (PAGUE R$ {valor_total}) + R$ {bonus} BÔNUS"
+        
+        # Calcular números grátis
+        if valor >= 200:
+            numeros_gratis = 20
+        elif valor >= 100:
+            numeros_gratis = 10
+        elif valor >= 50:
+            numeros_gratis = 5
         else:
-            bonus_text = ""
+            numeros_gratis = 0
 
+        # Formatação dos botões conforme solicitado
         if valor >= 50:
             keyboard.append([
                 InlineKeyboardButton(
-                    f"🔥 R$ {valor}{bonus_text} - POPULAR!",
+                    f"🔥 R$ {valor} + R$ {bonus} BÔNUS e {numeros_gratis} NÚMEROS GRÁTIS - POPULAR!",
                     callback_data=f"recarga_{valor}"
                 )
             ])
