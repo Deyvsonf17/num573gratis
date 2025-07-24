@@ -3168,6 +3168,20 @@ async def start_web_server():
         # Iniciar servidor na porta 5000
         runner = web.AppRunner(app)
         await runner.setup()
+        
+        # Verificar se porta está disponível
+        import socket
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.bind(('0.0.0.0', 5000))
+            sock.close()
+        except OSError:
+            logger.warning("🔄 Porta 5000 ocupada, tentando fechar processos antigos...")
+            # Tentar matar processos na porta
+            import os
+            os.system("pkill -f 'python main.py' 2>/dev/null || true")
+            await asyncio.sleep(2)
+        
         site = web.TCPSite(runner, '0.0.0.0', 5000)
         await site.start()
 
@@ -3221,9 +3235,8 @@ async def main():
         if CRYPTOPAY_API_TOKEN:
             await configurar_webhook_cryptopay()
 
-        # Criar e configurar updater manualmente para evitar conflitos
-        updater = Updater(application=application)
-        await updater.start_polling(
+        # Usar polling diretamente na aplicação
+        await application.updater.start_polling(
             allowed_updates=["message", "callback_query"],
             drop_pending_updates=True
         )
@@ -3234,16 +3247,15 @@ async def main():
                 await asyncio.sleep(1)
         except KeyboardInterrupt:
             logger.info("🛑 Parando serviços...")
-            await updater.stop()
+            await application.updater.stop()
             await application.stop()
             await web_runner.cleanup()
 
     except Exception as e:
         logger.error(f"Erro crítico ao iniciar bot: {e}")
-        # Aguardar e tentar reiniciar
-        await asyncio.sleep(5)
-        logger.info("Tentando reiniciar bot...")
-        await main()
+        # Sair sem tentar restart automático para evitar loops
+        import sys
+        sys.exit(1)
 
 async def configurar_webhook_cryptopay():
     """Configura webhook do CryptoPay para pagamentos automáticos"""
