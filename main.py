@@ -1737,7 +1737,19 @@ async def menu_indicacao(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("❌ Erro: Usuário não encontrado.")
         return
 
-    indicacoes = user_data[8] if len(user_data) > 8 else 0
+    # Corrigir índice das indicações - usar indicacoes_validas se existir
+    try:
+        with db._lock:
+            conn = db.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT indicacoes_validas FROM usuarios WHERE user_id = ?", (user_id,))
+            result = cursor.fetchone()
+            indicacoes = result[0] if result and result[0] else 0
+            conn.close()
+    except Exception as e:
+        logger.error(f"Erro ao buscar indicações: {e}")
+        indicacoes = 0
+
     stats = get_stats_fake()
 
     keyboard = [
